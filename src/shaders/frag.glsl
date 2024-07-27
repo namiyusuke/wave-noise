@@ -6,7 +6,7 @@ uniform float uPixels[36];
 varying vec2 vUv;
 #include '../glsl/noise.glsl'
 void main() {
-int indexProgress = int(uHover * 36.);
+int indexProgress = int(uHover * 36.1);
 float pixellation = floor(500. * uPixels[indexProgress]);
 float gridSize = 2500. / pixellation;
 vec2 newUV = floor(vUv * gridSize) / gridSize + 0.5/vec2(gridSize);
