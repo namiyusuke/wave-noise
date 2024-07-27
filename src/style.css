@@ -2,12 +2,12 @@ body {
   margin: 0;
   padding: 0;
   font-family: Arial, sans-serif;
-}
-body {
+  background-color: #000;
   height: 100%;
   display: flex;
   justify-content: center;
 }
+
 #canvas {
   width: 100vw;
   height: 100vh;
@@ -41,6 +41,7 @@ img {
   height: 700px;
   margin-left: 100px;
   margin-top: 100px;
+  margin-inline: auto;
 }
 article {
   position: absolute;
@@ -51,7 +52,3 @@ article {
   margin-left: 560px;
   margin-top: 100px;
 }
-/* .flex {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-      } */

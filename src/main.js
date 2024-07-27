@@ -2,6 +2,8 @@
 import { lerp } from "three/src/math/MathUtils.js";
 import gsap from "gsap";
 import * as THREE from "three";
+import vertex from "./shaders/vert.glsl";
+import fragment from "./shaders/frag.glsl";
 import { loadAllAssets, getTexture } from "./loader";
 import { createOrthographicCamera } from "./createCamera";
 // import { raycast, onPointerMove } from "./Mouse";
@@ -19,7 +21,13 @@ class CanvasBase {
   constructor() {
     this.objects = [];
     this.global = {};
+    this.pixel = [
+      1, 1.5, 2, 2.5, 3, 1, 1.5, 2, 2.5, 3, 3.5, 4, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6, 3, 3.5, 4, 4.5, 5, 5.5, 6, 6.5,
+      7, 7.5, 8, 8.5, 9, 20, 100,
+    ].map((v) => v / 100);
     this.raycaster = new THREE.Raycaster();
+    this.clock = new THREE.Clock();
+    this.delta = 0;
     this.loadTex = new THREE.TextureLoader();
     this.canvas = document.querySelector("#canvas");
     this.canvasRect = this.canvas.getBoundingClientRect();
@@ -57,44 +65,12 @@ class CanvasBase {
       const material = new THREE.ShaderMaterial({
         uniforms: {
           uTime: { value: 0 },
-          uHover: { value: 0 },
+          uHover: { value: 1 },
+          uPixels: { value: this.pixel },
           // uTex: { value: tex1 },
         },
-        vertexShader: `
-        varying vec2 vUv;
-        void main() {
-          vUv = uv;
-          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-        }
-        `,
-        fragmentShader: `
-        uniform float uTime;
-        uniform float uHover;
-        uniform sampler2D tex1;
-        uniform sampler2D tex2;
-        varying vec2 vUv;
-        float rand(vec2 n) {
-          return fract(sin(dot(n, vec2(12.9898, 4.1414))) * 43758.5453);
-        }
-        float noise(vec2 p){
-          vec2 ip = floor(p);
-          vec2 u = fract(p);
-          u = u*u*(3.0-2.0*u);
-          float res = mix(
-            mix(rand(ip),rand(ip+vec2(1.0,0.0)),u.x),
-            mix(rand(ip+vec2(0.0,1.0)),rand(ip+vec2(1.0,1.0)),u.x),u.y);
-          return res*res;
-        }
-        void main() {
-        float intensity =sin(3.14159 * uHover);
-        float distortion = noise(vUv * 10.0) * 1.*intensity;
-        vec2 distortedUV = vec2(vUv.x  , vUv.y +  distortion *.3 );
-        vec4 color1 = texture2D(tex1, distortedUV);
-        vec4 color2 = texture2D(tex2, distortedUV);
-        gl_FragColor = mix(color1, color2, uHover);
-          //  gl_FragColor = texture2D(tex1, vUv);
-        }
-        `,
+        vertexShader: vertex,
+        fragmentShader: fragment,
       });
 
       for (let [key, tex] of texes) {
@@ -109,6 +85,7 @@ class CanvasBase {
         geometry,
         rect,
         target,
+        material,
       };
       mesh.position.x = x;
       mesh.position.y = y;
@@ -138,9 +115,9 @@ class CanvasBase {
         // 交差検知をしたもののなかで、isIntersectingがtrueのDOMを色を変える関数に渡す
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
-            gsap.to(material.uniforms.uHover, { value: 1 });
+            gsap.to(material.uniforms.uHover, { value: 0, duration: 2 });
           } else {
-            gsap.to(material.uniforms.uHover, { value: 0 });
+            gsap.to(material.uniforms.uHover, { value: 1, duration: 2 });
           }
         });
       }
@@ -200,9 +177,12 @@ class CanvasBase {
 
   render() {
     requestAnimationFrame(this.render);
+    this.delta = this.clock.getElapsedTime();
     this.objects.forEach((object) => {
       this.updateScroll(object);
+      object.material.uniforms.uTime.value = this.delta;
     });
+
     this.global.renderer.render(this.global.renderer.scene, this.global.renderer.camera);
   }
 }
