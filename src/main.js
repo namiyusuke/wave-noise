@@ -6,6 +6,7 @@ import vertex from "./shaders/vert.glsl";
 import fragment from "./shaders/frag.glsl";
 import { loadAllAssets, getTexture } from "./loader";
 import { createOrthographicCamera } from "./createCamera";
+import Lenis from "lenis";
 // import { raycast, onPointerMove } from "./Mouse";
 
 // const pointer = new THREE.Vector2();
@@ -27,6 +28,7 @@ class CanvasBase {
     ].map((v) => v / 100);
     this.raycaster = new THREE.Raycaster();
     this.clock = new THREE.Clock();
+    this.scrollVelocity = 0;
     this.delta = 0;
     this.loadTex = new THREE.TextureLoader();
     this.canvas = document.querySelector("#canvas");
@@ -44,6 +46,21 @@ class CanvasBase {
     // });
   }
   async init() {
+    // smooth scroll (lenis)
+    const lenis = new Lenis();
+    // let scroll = {
+    //   scrollY: window.scrollY,
+    //   scrollVelocity: 0,
+    // };
+    lenis.on("scroll", (e) => {
+      // scroll.scrollY = window.scrollY;
+      this.scrollVelocity = e.velocity;
+    });
+    function scrollRaf(time) {
+      lenis.raf(time);
+      requestAnimationFrame(scrollRaf);
+    }
+    requestAnimationFrame(scrollRaf);
     const canvasWidth = this.canvasRect.width;
     const canvasHeight = this.canvasRect.height;
     this.global.renderer = new THREE.WebGLRenderer({ canvas: this.canvas, antialias: true });
@@ -61,12 +78,13 @@ class CanvasBase {
       await loadAllAssets();
       const texes = await getTexture(target);
       const { x, y } = this.getSize(this.newRect, this.canvasRect);
-      const geometry = new THREE.PlaneGeometry(this.newRect.width, rect.height, 1, 1);
+      const geometry = new THREE.PlaneGeometry(this.newRect.width, rect.height, 100, 100);
       const material = new THREE.ShaderMaterial({
         uniforms: {
           uTime: { value: 0 },
           uHover: { value: 1 },
           uPixels: { value: this.pixel },
+          uScrollVelocity: { value: 0 },
           // uTex: { value: tex1 },
         },
         vertexShader: vertex,
@@ -181,6 +199,8 @@ class CanvasBase {
     this.objects.forEach((object) => {
       this.updateScroll(object);
       object.material.uniforms.uTime.value = this.delta;
+      object.material.uniforms.uScrollVelocity.value = this.scrollVelocity;
+      console.log(object.material.uniforms.uScrollVelocity.value);
     });
 
     this.global.renderer.render(this.global.renderer.scene, this.global.renderer.camera);
