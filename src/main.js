@@ -83,6 +83,7 @@ class CanvasBase {
         uniforms: {
           uTime: { value: 0 },
           uHover: { value: 1 },
+          uHover2: { value: 0 },
           uPixels: { value: this.pixel },
           uScrollVelocity: { value: 0 },
           // uTex: { value: tex1 },
@@ -133,9 +134,18 @@ class CanvasBase {
         // 交差検知をしたもののなかで、isIntersectingがtrueのDOMを色を変える関数に渡す
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
-            gsap.to(material.uniforms.uHover, { value: 0, duration: 2 });
+            gsap.to(material.uniforms.uHover, { value: 0, duration: 2, delay: 0.5 });
+            gsap.to(material.uniforms.uHover2, {
+              value: 1,
+
+              duration: 2,
+              onComplete: () => {
+                gsap.to(material.uniforms.uHover2, { value: 0, duration: 0.5 });
+              },
+            });
           } else {
-            gsap.to(material.uniforms.uHover, { value: 1, duration: 2 });
+            gsap.to(material.uniforms.uHover, { value: 1, duration: 3 });
+            gsap.to(material.uniforms.uHover2, { value: 0, duration: 0.5 });
           }
         });
       }
